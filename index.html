@@ -1,4 +1,55 @@
 <style>
+    .permission-dialog {
+        z-index: 1;
+        position: absolute;
+        top : 0;
+        width: 400px;
+        left: 0;
+        right: 0;
+        margin: 0 auto;
+        padding: 50px;
+    }
+
+    .permission-card {
+        background: #dfe1ea;
+        padding: 0 20px 20px 0;
+        border-radius: 10px;
+    }
+    .permission-text{
+        padding: 20px;
+    }
+    .permission-controls {
+        text-align: right;
+        margin-top: 20px;
+    }
+    .permission-button-deny {
+        padding: 4px;
+        border-radius: 10px;
+        text-transform: capitalize;
+        transition: 0.1s all ease;
+        font-size: 0.875rem;
+        width: 112.69px;
+    }
+    .permission-button-deny:hover {
+        opacity: 0.8;
+        cursor: pointer;
+    }
+    .permission-button-allow {
+        padding: 4px 40px;
+        border-radius: 10px;
+        text-transform: capitalize;
+        transition: 0.1s all ease;
+        font-size: 0.875rem;
+        width: 112.69px;
+        background-color: #9139399c;
+    }
+    .permission-button-allow:hover {
+        opacity: 0.8;
+        color: #9139399c;
+        background-color: #fff;
+        border-color: #9139399c;
+        cursor: pointer;     
+    }
     .content-container {
         width: 100%;
         padding: 0;
@@ -262,6 +313,9 @@
 <script src="https://sdk.sariska.io/bundle.messaging.js"></script>
 <script type="text/javascript" src="https://sdk.sariska.io/umd/sariska-media-transport.min.js"></script>
 
+<div id = "permission-container">
+</div>
+
 
 <div class="conatiner-fluid live_background">
     <div class="video_flex ">
@@ -348,7 +402,7 @@
 					</div>
 				</div>
 			</div>
-		</div> -->
+		</div>
     </div>
 
 </div>
@@ -399,7 +453,6 @@
             console.log('error', error);
         }
     }
-
 
     async function meet() {
 
@@ -469,19 +522,42 @@
             console.log("Lobby user joinded");
             console.log("Name: ", name);
             console.log("id: ", id);
+            
+            const container = $("#permission-container");
 
-            // Display the confirmation box
-            var result = confirm('Are you sure you want to proceed?');
+            // Get the permission dialog container
+            const permissionDialog = $("<div>").addClass("permission-dialog " + id);
+            
+            // Create the permission card element
+            const permissionCard = $("<div>").addClass("permission-card");
 
-            // Check the user's choice
-            if (result) {
-                // User clicked OK, proceed with the action
-                console.log('Action confirmed!');
+            // Create the permission text element
+            const permissionText = $("<div>").addClass("permission-text").text(name + " wants to join");
+
+            // Create the permission controls element
+            const permissionControls = $("<div>").addClass("permission-controls");
+
+            // Create the Deny button
+            const denyButton = $("<button>").addClass("permission-button-deny").text("Deny").click(function() {
+                conference.lobbyDenyAccess(id);
+                permissionDialog.remove();
+            });
+
+            // Create the Allow button
+            const allowButton = $("<button>").addClass("permission-button-allow").text("Allow").click(function() {
                 conference.lobbyApproveAccess(id);
-            } else {
-                // User clicked Cancel, do nothing
-                console.log('Action canceled!');
-            }
+                permissionDialog.remove();
+            });
+
+            // Append the buttons to the permission controls
+            permissionControls.append(denyButton).append("&nbsp;&nbsp;").append(allowButton);
+
+            // Append the permission text and controls to the permission card
+            permissionCard.append(permissionText).append(permissionControls);
+
+            // Append the permission card to the container
+            permissionDialog.append(permissionCard);
+            container.append(permissionDialog);
         })
 
         const audioTrack = localTracks.find(track => track.getType() === "audio");
@@ -535,7 +611,7 @@
                 }
             }
         });
-
+        
         conference.addEventListener(SariskaMediaTransport.events.conference.USER_JOINED, function (id, participant) {
             console.log("user joined!!!", participant);
         });
@@ -543,7 +619,6 @@
 
     function Live() {
         $(".wow_go_live_btn").prop('disabled', true);
-
         isLive = true;
         meet();
 
